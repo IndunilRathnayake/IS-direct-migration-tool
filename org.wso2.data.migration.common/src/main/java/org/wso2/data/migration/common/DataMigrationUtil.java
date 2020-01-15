@@ -16,7 +16,7 @@ public class DataMigrationUtil {
         return new Gson().fromJson(objectInJson, objectClass);
     }
 
-   public static void authenticate(ServiceClient client, String adminUserName, String adminPassword) {
+    public static void authenticate(ServiceClient client, String adminUserName, String adminPassword) {
         Options option = client.getOptions();
         option.setProperty(HTTPConstants.COOKIE_STRING, null);
         HttpTransportProperties.Authenticator auth = new HttpTransportProperties.Authenticator();

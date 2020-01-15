@@ -1,4 +1,4 @@
-package org.wso2.data.migration_570;
+package org.wso2.data.migration_510;
 
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.client.ServiceClient;
@@ -6,115 +6,113 @@ import org.apache.axis2.context.ConfigurationContext;
 import org.apache.axis2.context.ConfigurationContextFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.wso2.carbon.identity.application.common.model.xsd.InboundAuthenticationRequestConfig;
+import org.wso2.carbon.identity.application.common.model.xsd.ApplicationBasicInfo;
 import org.wso2.carbon.identity.application.common.model.xsd.ServiceProvider;
 import org.wso2.carbon.identity.application.mgt.stub.IdentityApplicationManagementServiceIdentityApplicationManagementException;
 import org.wso2.carbon.identity.application.mgt.stub.IdentityApplicationManagementServiceStub;
 import org.wso2.carbon.identity.sso.saml.stub.IdentitySAMLSSOConfigServiceIdentityException;
 import org.wso2.carbon.identity.sso.saml.stub.IdentitySAMLSSOConfigServiceStub;
 import org.wso2.carbon.identity.sso.saml.stub.types.SAMLSSOServiceProviderDTO;
-import org.wso2.data.migration.common.DataMigrationConstants;
+import org.wso2.carbon.identity.sso.saml.stub.types.SAMLSSOServiceProviderInfoDTO;
 import org.wso2.data.migration.common.DataMigrationException;
 import org.wso2.data.migration.common.DataMigrationUtil;
 
 import java.rmi.RemoteException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+public class SPData510 {
 
-public class SP570DataRetrieval {
+    private static Logger logger = LoggerFactory.getLogger(SPData510.class);
 
-    private static Logger logger = LoggerFactory.getLogger(SP570DataRetrieval.class);
+    private static SPData510 spData510;
+    private static IdentityApplicationManagementServiceStub applicationMgtServiceStub;
+    private static IdentitySAMLSSOConfigServiceStub samlConfigServiceStub;
 
-    private static SP570DataRetrieval sp570DataRetrieval;
-    private IdentityApplicationManagementServiceStub applicationMgtServiceStub;
-    IdentitySAMLSSOConfigServiceStub samlConfigServiceStub;
-
-    private SP570DataRetrieval() {
+    private SPData510() {
 
     }
 
-    private SP570DataRetrieval(String hostname, String port, String trustStorePath, String trustStorePassword,
-                               String adminUsername, String adminPassword) {
+    private SPData510(String hostname, String port, String trustStorePath, String trustStorePassword,
+                      String adminUsername, String adminPassword) {
         applicationMgtServiceStub = getIdentityApplicationManagementService(hostname, port, trustStorePath,
                 trustStorePassword, adminUsername, adminPassword);
         samlConfigServiceStub = getSAMLSSOConfigService(hostname, port, trustStorePath, trustStorePassword,
                 adminUsername, adminPassword);
     }
 
-    public static SP570DataRetrieval getInstance(String hostname, String port, String trustStorePath,
-                                                 String trustStorePassword, String adminUsername,
-                                                 String adminPassword) {
-        if (sp570DataRetrieval == null) {
-            synchronized (SP570DataRetrieval.class) {
-                if (sp570DataRetrieval == null) {
-                    sp570DataRetrieval = new SP570DataRetrieval(hostname, port, trustStorePath, trustStorePassword,
+    public static SPData510 getInstance(String hostname, String port, String trustStorePath,
+                                        String trustStorePassword, String adminUsername,
+                                        String adminPassword) {
+        if (spData510 == null) {
+            synchronized (SPData510.class) {
+                if (spData510 == null) {
+                    spData510 = new SPData510(hostname, port, trustStorePath, trustStorePassword,
                             adminUsername, adminPassword);
                 }
             }
         }
-        return sp570DataRetrieval;
+        return spData510;
     }
 
-    public void createServiceProvider(String serviceProviderAsJson, Map<String, String> serviceProviderDTOMap)
-            throws DataMigrationException {
+    public List<String> getAllServiceProviderNames() throws DataMigrationException {
 
-        logger.info("Creating the Service Provider in IS 5.7.0");
+        logger.info("Retrieving all the SAML Service Provider names of IS 5.1.0.");
 
-        ServiceProvider serviceProvider_created = createSPMetadata(serviceProviderAsJson);
-        createSAMLSPConfiguration(serviceProviderDTOMap.get(retrieveIssuerName(serviceProvider_created)));
-    }
+        ApplicationBasicInfo[] applicationBasicInfos;
+        List<String> appNames = new ArrayList<>();
 
-    private ServiceProvider createSPMetadata(String serviceProviderAsJson) throws DataMigrationException {
-
-        ServiceProvider serviceProvider_created;
+        if (applicationMgtServiceStub == null) {
+            throw new DataMigrationException("Couldn't find Application Management service stub");
+        }
         try {
-            if (applicationMgtServiceStub == null) {
-                throw new DataMigrationException("Couldn't find Application Management service stub");
-            }
-            ServiceProvider serviceProvider = (ServiceProvider) DataMigrationUtil.getObjectFromJson(
-                    serviceProviderAsJson, ServiceProvider.class);
-            serviceProvider_created = applicationMgtServiceStub.createApplicationWithTemplate(serviceProvider, null);
-            logger.info("Service provider basic info is added for SP : " + serviceProvider_created.getApplicationName());
-
-            serviceProvider.setApplicationID(serviceProvider_created.getApplicationID());
-            applicationMgtServiceStub.updateApplication(serviceProvider);
-            logger.info("Service provider other metadata is added for SP : " +
-                    serviceProvider_created.getApplicationName());
+            applicationBasicInfos = applicationMgtServiceStub.getAllApplicationBasicInfo();
         } catch (RemoteException | IdentityApplicationManagementServiceIdentityApplicationManagementException e) {
-            throw new DataMigrationException("Error in adding Service Provider Basic Info and other Metadata in " +
-                    "IS 5.7.0", e);
+            throw new DataMigrationException("Error in retrieving all the application basic information in IS 5.1.0", e);
         }
-        return serviceProvider_created;
+
+        for (ApplicationBasicInfo info : applicationBasicInfos) {
+            appNames.add(info.getApplicationName());
+        }
+        return appNames;
     }
 
-    private String retrieveIssuerName(ServiceProvider serviceProvider) {
+    public String getServiceProvider(String appName) throws DataMigrationException {
 
-        String issuerName = null;
-        InboundAuthenticationRequestConfig[] inboundAuthenticationRequestConfigs =
-                serviceProvider.getInboundAuthenticationConfig().getInboundAuthenticationRequestConfigs();
-        for (InboundAuthenticationRequestConfig config : inboundAuthenticationRequestConfigs) {
-            if (DataMigrationConstants.SAML_INBOUND_AUTH_TYPE.equals(config.getInboundAuthType())) {
-                issuerName = config.getInboundAuthKey();
-            }
+        logger.info("Retrieving the SAML Service Provider : " + appName);
+
+        ServiceProvider serviceProvider;
+        if (applicationMgtServiceStub == null) {
+            throw new DataMigrationException("Couldn't find Application Management service stub");
         }
-        return issuerName;
+        try {
+            serviceProvider = applicationMgtServiceStub.getApplication(appName);
+        } catch (RemoteException | IdentityApplicationManagementServiceIdentityApplicationManagementException e) {
+            throw new DataMigrationException("Error in retrieving the Service provider for SP name : " + appName + " in IS 5.1.0", e);
+        }
+        return DataMigrationUtil.getObjectInJson(serviceProvider);
     }
 
-    private void createSAMLSPConfiguration(String serviceProviderDTO) throws DataMigrationException {
+    public Map<String, String> getSAMLSPConfiguration() throws DataMigrationException {
 
-        logger.info("Creating the SAML Service Provider configurations in IS 5.7.0");
+        logger.info("Retrieving all the SAML Service Provider configurations of IS 5.1.0.");
 
+        Map<String, String> samlSPConfigMap = new HashMap<>();
+        SAMLSSOServiceProviderInfoDTO sameSPInfoDTO;
         if (samlConfigServiceStub == null) {
             throw new DataMigrationException("Couldn't find SAML Config service stub");
         }
-        SAMLSSOServiceProviderDTO samlssoServiceProviderDTO = (SAMLSSOServiceProviderDTO)
-                DataMigrationUtil.getObjectFromJson(serviceProviderDTO, SAMLSSOServiceProviderDTO.class);
         try {
-            samlConfigServiceStub.addRPServiceProvider(samlssoServiceProviderDTO);
+            sameSPInfoDTO = samlConfigServiceStub.getServiceProviders();
         } catch (RemoteException | IdentitySAMLSSOConfigServiceIdentityException e) {
-            throw new DataMigrationException("Error in adding Service Provider SAML configuration in " +
-                    "IS 5.7.0", e);
+            throw new DataMigrationException("Error in retrieving all the application basic information in IS 5.1.0", e);
         }
+        for (SAMLSSOServiceProviderDTO providerDTO : sameSPInfoDTO.getServiceProviders()) {
+            samlSPConfigMap.put(providerDTO.getIssuer(), DataMigrationUtil.getObjectInJson(providerDTO));
+        }
+        return samlSPConfigMap;
     }
 
     private IdentityApplicationManagementServiceStub getIdentityApplicationManagementService(String hostName,

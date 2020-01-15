@@ -13,5 +13,5 @@ destAdminUsername="admin"
 destAdminPassword="admin"
 
 java -jar /Applications/1_WSO2/GIT_Repo/Support/data-migration-tool/org.wso2.data.migration.execution/target/org.wso2.data.migration.execution-1.0.0-jar-with-dependencies.jar \
-$sourceISHostname  $sourceISPort  $sourceTruststorePath  $sourceTruststorePassword  $sourceAdminUsername  $sourceAdminPassword  \
-$destISHostname  $destISPort  $destTruststorePath  $destTruststorePassword  $destAdminUsername  $destAdminPassword
+  $sourceISHostname $sourceISPort $sourceTruststorePath $sourceTruststorePassword $sourceAdminUsername $sourceAdminPassword \
+  $destISHostname $destISPort $destTruststorePath $destTruststorePassword $destAdminUsername $destAdminPassword

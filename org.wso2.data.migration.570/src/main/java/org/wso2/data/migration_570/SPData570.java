@@ -7,19 +7,24 @@ import org.apache.axis2.context.ConfigurationContextFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wso2.carbon.identity.application.common.model.xsd.InboundAuthenticationRequestConfig;
+import org.wso2.carbon.identity.application.common.model.xsd.Property;
 import org.wso2.carbon.identity.application.common.model.xsd.ServiceProvider;
 import org.wso2.carbon.identity.application.mgt.stub.IdentityApplicationManagementServiceIdentityApplicationManagementException;
 import org.wso2.carbon.identity.application.mgt.stub.IdentityApplicationManagementServiceStub;
 import org.wso2.carbon.identity.sso.saml.stub.IdentitySAMLSSOConfigServiceIdentityException;
 import org.wso2.carbon.identity.sso.saml.stub.IdentitySAMLSSOConfigServiceStub;
 import org.wso2.carbon.identity.sso.saml.stub.types.SAMLSSOServiceProviderDTO;
-import org.wso2.data.migration.common.DataMigrationConstants;
 import org.wso2.data.migration.common.DataMigrationException;
 import org.wso2.data.migration.common.DataMigrationUtil;
 
 import java.rmi.RemoteException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
+import static org.wso2.data.migration.common.DataMigrationConstants.*;
 
 public class SPData570 {
 
@@ -77,6 +82,9 @@ public class SPData570 {
             logger.info("Service provider basic info is added for SP : " + serviceProvider_created.getApplicationName());
 
             serviceProvider.setApplicationID(serviceProvider_created.getApplicationID());
+
+            updateCasConfiguration(serviceProvider);
+
             applicationMgtServiceStub.updateApplication(serviceProvider);
             logger.info("Service provider other metadata is added for SP : " +
                     serviceProvider_created.getApplicationName());
@@ -87,6 +95,50 @@ public class SPData570 {
         return serviceProvider_created;
     }
 
+    private void updateCasConfiguration(ServiceProvider serviceProvider) {
+
+        if (serviceProvider.getInboundAuthenticationConfig() != null &&
+                serviceProvider.getInboundAuthenticationConfig().getInboundAuthenticationRequestConfigs() != null) {
+            List<InboundAuthenticationRequestConfig> requestConfig = new ArrayList(Arrays.asList(serviceProvider.getInboundAuthenticationConfig()
+                    .getInboundAuthenticationRequestConfigs()));
+            InboundAuthenticationRequestConfig updatedCASConfig = new InboundAuthenticationRequestConfig();
+            updatedCASConfig.setInboundAuthType(CAS_570_INBOUND_AUTH_TYPE);
+            updatedCASConfig.setInboundConfigType(CAS_570_INBOUND_CONFIG_TYPE);
+            updatedCASConfig.setFriendlyName(CAS_570_INBOUND_CONFIG_FRIENDLY_NAME);
+
+            Iterator itr = requestConfig.iterator();
+            while (itr.hasNext()) {
+                InboundAuthenticationRequestConfig config = (InboundAuthenticationRequestConfig) itr.next();
+                if (CAS_510_INBOUND_AUTH_NAME.equals(config.getInboundAuthType())) {
+                    itr.remove();
+                } else if (CAS_510_INBOUND_AUTH_URL.equals(config.getInboundAuthType())) {
+                    Property property = new Property();
+                    property.setName(CAS_570_INBOUND_AUTH_PROPERTY_URL);
+                    property.setValue(config.getInboundAuthKey());
+                    property.setDisplayName(CAS_570_INBOUND_AUTH_PROPERTY_URL_DISPLAY_NAME);
+                    property.setRequired(false);
+                    property.setDescription(CAS_570_INBOUND_AUTH_PROPERTY_URL_DESCRIPTION);
+                    property.setDisplayOrder(0);
+                    updatedCASConfig.addProperties(property);
+                    itr.remove();
+                } else if (CAS_510_INBOUND_AUTH_SLO.equals(config.getInboundAuthType())) {
+                    Property property = new Property();
+                    property.setName(CAS_570_INBOUND_AUTH_PROPERTY_SLO);
+                    property.setValue(config.getInboundAuthKey());
+                    property.setDisplayName(CAS_570_INBOUND_AUTH_PROPERTY_SLO_DISPLAY_NAME);
+                    property.setRequired(false);
+                    property.setType(CAS_570_INBOUND_AUTH_PROPERTY_SLO_TYPE);
+                    property.setDisplayOrder(1);
+                    updatedCASConfig.addProperties(property);
+                    itr.remove();
+                }
+            }
+            requestConfig.add(updatedCASConfig);
+            serviceProvider.getInboundAuthenticationConfig().setInboundAuthenticationRequestConfigs(
+                    requestConfig.toArray(new InboundAuthenticationRequestConfig[requestConfig.size()]));
+        }
+    }
+
     private String retrieveIssuerName(ServiceProvider serviceProvider) {
 
         String issuerName = null;
@@ -94,7 +146,7 @@ public class SPData570 {
                 serviceProvider.getInboundAuthenticationConfig().getInboundAuthenticationRequestConfigs();
         if (inboundAuthenticationRequestConfigs != null) {
             for (InboundAuthenticationRequestConfig config : inboundAuthenticationRequestConfigs) {
-                if (DataMigrationConstants.SAML_INBOUND_AUTH_TYPE.equals(config.getInboundAuthType())) {
+                if (SAML_INBOUND_AUTH_TYPE.equals(config.getInboundAuthType())) {
                     issuerName = config.getInboundAuthKey();
                 }
             }
@@ -121,12 +173,12 @@ public class SPData570 {
         }
     }
 
-    public IdentityApplicationManagementServiceStub getIdentityApplicationManagementService(String hostName,
-                                                                                            String port,
-                                                                                            String trustStorePath,
-                                                                                            String trustStorePassword,
-                                                                                            String adminUsername,
-                                                                                            String adminPassword) {
+    private IdentityApplicationManagementServiceStub getIdentityApplicationManagementService(String hostName,
+                                                                                             String port,
+                                                                                             String trustStorePath,
+                                                                                             String trustStorePassword,
+                                                                                             String adminUsername,
+                                                                                             String adminPassword) {
 
         DataMigrationUtil.setTrustStoreForSSL(trustStorePath, trustStorePassword);
         ConfigurationContext configContext = null;

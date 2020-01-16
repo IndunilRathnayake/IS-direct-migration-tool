@@ -13,4 +13,18 @@ public class DataMigrationConstants {
     public static String SAML_INBOUND_AUTH_TYPE = "samlsso";
     public static String LOCAL_CLAIM_DIALECT = "http://wso2.org/claims";
 
+    public static String CAS_510_INBOUND_AUTH_NAME = "cassso";
+    public static String CAS_510_INBOUND_AUTH_SLO = "casSingleLogoutEnabled";
+    public static String CAS_510_INBOUND_AUTH_URL = "casServiceUrl";
+
+    public static String CAS_570_INBOUND_AUTH_TYPE = "cas";
+    public static String CAS_570_INBOUND_CONFIG_TYPE = "cas";
+    public static String CAS_570_INBOUND_CONFIG_FRIENDLY_NAME = "CAS Configuration";
+    public static String CAS_570_INBOUND_AUTH_PROPERTY_SLO = "sloEnabled";
+    public static String CAS_570_INBOUND_AUTH_PROPERTY_SLO_DISPLAY_NAME = "Enable Single Logout";
+    public static String CAS_570_INBOUND_AUTH_PROPERTY_SLO_TYPE = "checkbox";
+    public static String CAS_570_INBOUND_AUTH_PROPERTY_URL = "service";
+    public static String CAS_570_INBOUND_AUTH_PROPERTY_URL_DISPLAY_NAME = "Service Url";
+    public static String CAS_570_INBOUND_AUTH_PROPERTY_URL_DESCRIPTION = "Enter a value that starts with the required URL";
+
 }

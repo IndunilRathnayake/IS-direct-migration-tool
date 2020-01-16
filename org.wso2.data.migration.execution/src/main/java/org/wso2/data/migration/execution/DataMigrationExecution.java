@@ -43,14 +43,14 @@ public class DataMigrationExecution {
                 add("9443");
                 add("/Applications/1_WSO2/Allocation/Offsite/wso2is-5.1.0_2/repository/resources/security/client-truststore.jks");
                 add("wso2carbon");
-                add("tmulvaney");
-                add("password");
+                add("admin");
+                add("admin");
                 add("localhost");
                 add("9444");
                 add("/Applications/1_WSO2/Allocation/Offsite/wso2is-5.7.0/repository/resources/security/client-truststore.jks");
                 add("wso2carbon");
-                add("tmulvaney");
-                add("password");
+                add("admin");
+                add("admin");
             }
         };
 

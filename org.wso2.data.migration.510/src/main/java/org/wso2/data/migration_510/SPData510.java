@@ -110,6 +110,7 @@ public class SPData510 {
             throw new DataMigrationException("Error in retrieving all the application basic information in IS 5.1.0", e);
         }
         for (SAMLSSOServiceProviderDTO providerDTO : sameSPInfoDTO.getServiceProviders()) {
+            enableSAMLAttributeProfile(providerDTO);
             samlSPConfigMap.put(providerDTO.getIssuer(), DataMigrationUtil.getObjectInJson(providerDTO));
         }
         return samlSPConfigMap;
@@ -169,5 +170,13 @@ public class SPData510 {
         ServiceClient client = samlConfigServiceStub._getServiceClient();
         DataMigrationUtil.authenticate(client, adminUsername, adminPassword);
         return samlConfigServiceStub;
+    }
+
+    private void enableSAMLAttributeProfile(SAMLSSOServiceProviderDTO samlssoServiceProviderDTO) {
+
+        if (samlssoServiceProviderDTO.getAttributeConsumingServiceIndex() != null) {
+            samlssoServiceProviderDTO.setEnableAttributeProfile(true);
+            samlssoServiceProviderDTO.setEnableAttributesByDefault(true);
+        }
     }
 }

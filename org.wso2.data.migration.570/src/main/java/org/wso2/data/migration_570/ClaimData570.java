@@ -12,7 +12,6 @@ import org.wso2.carbon.identity.claim.metadata.mgt.stub.ClaimMetadataManagementS
 import org.wso2.carbon.identity.claim.metadata.mgt.stub.dto.AttributeMappingDTO;
 import org.wso2.carbon.identity.claim.metadata.mgt.stub.dto.ClaimPropertyDTO;
 import org.wso2.carbon.identity.claim.metadata.mgt.stub.dto.LocalClaimDTO;
-import org.wso2.data.migration.common.DataMigrationConstants;
 import org.wso2.data.migration.common.DataMigrationException;
 import org.wso2.data.migration.common.DataMigrationUtil;
 import org.wso2.data.migration.common.claim.DomainClaimAttribute;
@@ -21,6 +20,8 @@ import org.wso2.data.migration.common.claim.LocalClaimMetaData;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.wso2.data.migration.common.DataMigrationConstants.*;
 
 public class ClaimData570 {
 
@@ -96,14 +97,14 @@ public class ClaimData570 {
                 }
 
                 List<ClaimPropertyDTO> claimProperties = new ArrayList<>();
-                claimProperties.add(getClaimProperty(DataMigrationConstants.DISPLAY_NAME_PROPERTY_570, spLocalClaim.getDisplayName()));
-                claimProperties.add(getClaimProperty(DataMigrationConstants.DESCRIPTION_PROPERTY_570, spLocalClaim.getDescription()));
-                claimProperties.add(getClaimProperty(DataMigrationConstants.DISPLAY_ORDER_PROPERTY_570, spLocalClaim.getDisplayOrder()));
-                claimProperties.add(getClaimProperty(DataMigrationConstants.READ_ONLY_PROPERTY_570, spLocalClaim.isReadOnly()));
-                claimProperties.add(getClaimProperty(DataMigrationConstants.REQUIRED_PROPERTY_570, spLocalClaim.isRequired()));
-                claimProperties.add(getClaimProperty(DataMigrationConstants.SUPPORTED_BY_DEFAULT_PROPERTY_570, spLocalClaim.isSupportedByDefault()));
+                claimProperties.add(getClaimProperty(DISPLAY_NAME_PROPERTY_570, spLocalClaim.getDisplayName()));
+                claimProperties.add(getClaimProperty(DESCRIPTION_PROPERTY_570, spLocalClaim.getDescription()));
+                claimProperties.add(getClaimProperty(DISPLAY_ORDER_PROPERTY_570, spLocalClaim.getDisplayOrder()));
+                claimProperties.add(getClaimProperty(READ_ONLY_PROPERTY_570, spLocalClaim.isReadOnly()));
+                claimProperties.add(getClaimProperty(REQUIRED_PROPERTY_570, spLocalClaim.isRequired()));
+                claimProperties.add(getClaimProperty(SUPPORTED_BY_DEFAULT_PROPERTY_570, spLocalClaim.isSupportedByDefault()));
                 if (spLocalClaim.getRegEx() != null) {
-                    claimProperties.add(getClaimProperty(DataMigrationConstants.REGULAR_EXPRESSION_PROPERTY_570, spLocalClaim.getRegEx()));
+                    claimProperties.add(getClaimProperty(REGULAR_EXPRESSION_PROPERTY_570, spLocalClaim.getRegEx()));
                 }
                 claimDTO570.setClaimProperties(claimProperties.toArray(new ClaimPropertyDTO[claimProperties.size()]));
 

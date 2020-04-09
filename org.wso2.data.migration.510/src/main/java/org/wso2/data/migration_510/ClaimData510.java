@@ -99,14 +99,16 @@ public class ClaimData510 {
     public List<LocalClaimMetaData> getLocalClaimsInSPConfig(String serviceProviderInJson) throws DataMigrationException {
 
         List<LocalClaimMetaData> spLocalClaims = new ArrayList<>();
-        ServiceProvider serviceProvider = (ServiceProvider) DataMigrationUtil.getObjectFromJson(serviceProviderInJson, ServiceProvider.class);
-        if (MapUtils.isEmpty(localClaimMap)) {
-            getAllLocalClaims();
-        }
+        if (serviceProviderInJson != null) {
+            ServiceProvider serviceProvider = (ServiceProvider) DataMigrationUtil.getObjectFromJson(serviceProviderInJson, ServiceProvider.class);
+            if (MapUtils.isEmpty(localClaimMap)) {
+                getAllLocalClaims();
+            }
 
-        if (serviceProvider.getClaimConfig() != null && serviceProvider.getClaimConfig().getClaimMappings() != null) {
-            for (ClaimMapping claimMapping : serviceProvider.getClaimConfig().getClaimMappings()) {
-                spLocalClaims.add(localClaimMap.get(claimMapping.getLocalClaim().getClaimUri()));
+            if (serviceProvider.getClaimConfig() != null && serviceProvider.getClaimConfig().getClaimMappings() != null) {
+                for (ClaimMapping claimMapping : serviceProvider.getClaimConfig().getClaimMappings()) {
+                    spLocalClaims.add(localClaimMap.get(claimMapping.getLocalClaim().getClaimUri()));
+                }
             }
         }
         return spLocalClaims;
@@ -126,14 +128,14 @@ public class ClaimData510 {
             configContext = ConfigurationContextFactory
                     .createConfigurationContextFromFileSystem(null, null);
         } catch (AxisFault axisFault) {
-            logger.error("Unable to create Configuration Context", axisFault);
+            logger.error("Unable to create Configuration Context");
         }
 
         try {
             claimMgtServiceStub = new ClaimManagementServiceStub(configContext, serviceEndPoint);
         } catch (AxisFault axisFault) {
             logger.error("Unable to instantiate admin Service stub of " +
-                    "IdentityApplicationManagementService", axisFault);
+                    "IdentityApplicationManagementService");
         }
         ServiceClient client = claimMgtServiceStub._getServiceClient();
         DataMigrationUtil.authenticate(client, adminUsername, adminPassword);

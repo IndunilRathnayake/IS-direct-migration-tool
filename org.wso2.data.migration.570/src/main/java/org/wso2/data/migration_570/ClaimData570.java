@@ -83,38 +83,40 @@ public class ClaimData570 {
             getAllLocalClaimUris();
         }
 
-        for (LocalClaimMetaData spLocalClaim : spLocalClaims) {
-            if (!localClaimUris.contains(spLocalClaim.getClaimUri())) {
-                if (claimMetadataMgtServiceStub == null) {
-                    throw new DataMigrationException("Couldn't find Claim Meta data Management service stub");
-                }
+        if (spLocalClaims != null) {
+            for (LocalClaimMetaData spLocalClaim : spLocalClaims) {
+                if (!localClaimUris.contains(spLocalClaim.getClaimUri())) {
+                    if (claimMetadataMgtServiceStub == null) {
+                        throw new DataMigrationException("Couldn't find Claim Meta data Management service stub");
+                    }
 
-                LocalClaimDTO claimDTO570 = new LocalClaimDTO();
-                claimDTO570.setLocalClaimURI(spLocalClaim.getClaimUri());
+                    LocalClaimDTO claimDTO570 = new LocalClaimDTO();
+                    claimDTO570.setLocalClaimURI(spLocalClaim.getClaimUri());
 
-                for (DomainClaimAttribute claimAttribute : spLocalClaim.getMappedAttributes()) {
-                    claimDTO570.addAttributeMappings(getAttributeMapping(claimAttribute.getAttributeName(), claimAttribute.getDomainName()));
-                }
+                    for (DomainClaimAttribute claimAttribute : spLocalClaim.getMappedAttributes()) {
+                        claimDTO570.addAttributeMappings(getAttributeMapping(claimAttribute.getAttributeName(), claimAttribute.getDomainName()));
+                    }
 
-                List<ClaimPropertyDTO> claimProperties = new ArrayList<>();
-                claimProperties.add(getClaimProperty(DISPLAY_NAME_PROPERTY_570, spLocalClaim.getDisplayName()));
-                claimProperties.add(getClaimProperty(DESCRIPTION_PROPERTY_570, spLocalClaim.getDescription()));
-                claimProperties.add(getClaimProperty(DISPLAY_ORDER_PROPERTY_570, spLocalClaim.getDisplayOrder()));
-                claimProperties.add(getClaimProperty(READ_ONLY_PROPERTY_570, spLocalClaim.isReadOnly()));
-                claimProperties.add(getClaimProperty(REQUIRED_PROPERTY_570, spLocalClaim.isRequired()));
-                claimProperties.add(getClaimProperty(SUPPORTED_BY_DEFAULT_PROPERTY_570, spLocalClaim.isSupportedByDefault()));
-                if (spLocalClaim.getRegEx() != null) {
-                    claimProperties.add(getClaimProperty(REGULAR_EXPRESSION_PROPERTY_570, spLocalClaim.getRegEx()));
-                }
-                claimDTO570.setClaimProperties(claimProperties.toArray(new ClaimPropertyDTO[claimProperties.size()]));
+                    List<ClaimPropertyDTO> claimProperties = new ArrayList<>();
+                    claimProperties.add(getClaimProperty(DISPLAY_NAME_PROPERTY_570, spLocalClaim.getDisplayName()));
+                    claimProperties.add(getClaimProperty(DESCRIPTION_PROPERTY_570, spLocalClaim.getDescription()));
+                    claimProperties.add(getClaimProperty(DISPLAY_ORDER_PROPERTY_570, spLocalClaim.getDisplayOrder()));
+                    claimProperties.add(getClaimProperty(READ_ONLY_PROPERTY_570, spLocalClaim.isReadOnly()));
+                    claimProperties.add(getClaimProperty(REQUIRED_PROPERTY_570, spLocalClaim.isRequired()));
+                    claimProperties.add(getClaimProperty(SUPPORTED_BY_DEFAULT_PROPERTY_570, spLocalClaim.isSupportedByDefault()));
+                    if (spLocalClaim.getRegEx() != null) {
+                        claimProperties.add(getClaimProperty(REGULAR_EXPRESSION_PROPERTY_570, spLocalClaim.getRegEx()));
+                    }
+                    claimDTO570.setClaimProperties(claimProperties.toArray(new ClaimPropertyDTO[claimProperties.size()]));
 
-                try {
-                    claimMetadataMgtServiceStub.addLocalClaim(claimDTO570);
-                } catch (RemoteException | ClaimMetadataManagementServiceClaimMetadataException e) {
-                    throw new DataMigrationException("Error in adding local claim : " + spLocalClaim.getClaimUri() +
-                            " in IS 5.7.0", e);
+                    try {
+                        claimMetadataMgtServiceStub.addLocalClaim(claimDTO570);
+                    } catch (RemoteException | ClaimMetadataManagementServiceClaimMetadataException e) {
+                        throw new DataMigrationException("Error in adding local claim : " + spLocalClaim.getClaimUri() +
+                                " in IS 5.7.0", e);
+                    }
+                    localClaimUris.add(spLocalClaim.getClaimUri());
                 }
-                localClaimUris.add(spLocalClaim.getClaimUri());
             }
         }
     }
@@ -147,14 +149,14 @@ public class ClaimData570 {
             configContext = ConfigurationContextFactory
                     .createConfigurationContextFromFileSystem(null, null);
         } catch (AxisFault axisFault) {
-            logger.error("Unable to create Configuration Context", axisFault);
+            logger.error("Unable to create Configuration Context");
         }
 
         try {
             claimMetadataMgtServiceStub = new ClaimMetadataManagementServiceStub(configContext, serviceEndPoint);
         } catch (AxisFault axisFault) {
             logger.error("Unable to instantiate admin Service stub of " +
-                    "IdentityApplicationManagementService", axisFault);
+                    "IdentityApplicationManagementService");
         }
         ServiceClient client = claimMetadataMgtServiceStub._getServiceClient();
         DataMigrationUtil.authenticate(client, adminUsername, adminPassword);

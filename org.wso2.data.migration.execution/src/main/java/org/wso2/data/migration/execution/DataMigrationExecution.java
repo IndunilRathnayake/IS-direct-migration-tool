@@ -7,10 +7,11 @@ import org.wso2.data.migration.common.DataMigrationException;
 import org.wso2.data.migration.common.claim.LocalClaimMetaData;
 import org.wso2.data.migration_510.ClaimData510;
 import org.wso2.data.migration_510.SPData510;
+import org.wso2.data.migration_510.UserData510;
 import org.wso2.data.migration_570.ClaimData570;
 import org.wso2.data.migration_570.SPData570;
+import org.wso2.data.migration_570.UserData570;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -25,6 +26,7 @@ public class DataMigrationExecution {
     private static String sourceTruststorePassword;
     private static String sourceAdminUsername;
     private static String sourceAdminPassword;
+    private static String assignAllAppRoles;
 
     private static String destISHostname;
     private static String destISPort;
@@ -35,34 +37,10 @@ public class DataMigrationExecution {
 
     public static void main(String[] args) {
 
-        args = new String[12];
-
-        List<String> a = new ArrayList<String>() {
-            {
-                add("localhost");
-                add("9443");
-                add("/Applications/1_WSO2/Allocation/Offsite/wso2is-5.1.0_2/repository/resources/security/client-truststore.jks");
-                add("wso2carbon");
-                add("admin");
-                add("admin");
-                add("localhost");
-                add("9444");
-                add("/Applications/1_WSO2/Allocation/Offsite/wso2is-5.7.0/repository/resources/security/client-truststore.jks");
-                add("wso2carbon");
-                add("admin");
-                add("admin");
-            }
-        };
-
-        for (int j = 0; j < a.size(); j++) {
-            args[j] = a.get(j);
-        }
-
         // resolve to issue 'ORA-12705: Cannot access NLS data files or invalid environment specified'
         Locale.setDefault(Locale.ENGLISH);
 
         PropertyConfigurator.configure("log4j.properties");
-        logger.info("*********Start of Database Migration Process********");
 
         sourceISHostname = args[0];
         sourceISPort = args[1];
@@ -70,15 +48,16 @@ public class DataMigrationExecution {
         sourceTruststorePassword = args[3];
         sourceAdminUsername = args[4];
         sourceAdminPassword = args[5];
+        assignAllAppRoles = args[6];
 
-        destISHostname = args[6];
-        destISPort = args[7];
-        destTruststorePath = args[8];
-        destTruststorePassword = args[9];
-        destAdminUsername = args[10];
-        destAdminPassword = args[11];
+        destISHostname = args[7];
+        destISPort = args[8];
+        destTruststorePath = args[9];
+        destTruststorePassword = args[10];
+        destAdminUsername = args[11];
+        destAdminPassword = args[12];
 
-        if (args.length != 12) {
+        if (args.length != 13) {
             throw new RuntimeException("Required arguments not provided");
         }
 
@@ -92,26 +71,69 @@ public class DataMigrationExecution {
         ClaimData570 claimData570 = ClaimData570.getInstance(destISHostname, destISPort,
                 destTruststorePath, destTruststorePassword, destAdminUsername, destAdminPassword);
 
-        Map<String, String> serviceProviderDTOMap;
-        List<String> appNames;
-        try {
-            serviceProviderDTOMap = spData510.getSAMLSPConfiguration();
-            appNames = spData510.getAllServiceProviderNames();
-        } catch (DataMigrationException e) {
-            throw new RuntimeException("Error while retrieving all the service provider information from IS 5.1.0", e);
-        }
+        UserData510 userData510 = UserData510.getInstance(sourceISHostname, sourceISPort, sourceTruststorePath,
+                sourceTruststorePassword, sourceAdminUsername, sourceAdminPassword);
+        UserData570 userData570 = UserData570.getInstance(destISHostname, destISPort,
+                destTruststorePath, destTruststorePassword, destAdminUsername, destAdminPassword);
 
-        for (String name : appNames) {
+        if (Boolean.parseBoolean(assignAllAppRoles)) {
             try {
-                String sp510 = spData510.getServiceProvider(name);
-                List<LocalClaimMetaData> localClaimDTOs = claimData510.getLocalClaimsInSPConfig(sp510);
-                claimData570.createLocalClaimsInSPConfig(localClaimDTOs);
-                spData570.createServiceProvider(sp510, serviceProviderDTOMap);
+                userData510.assignAllApplicationRoles(sourceAdminUsername);
             } catch (DataMigrationException e) {
-                logger.error("Error while retrieving service provider information and creating of SP : " + name, e);
-                continue;
+                logger.error("Error while assigning all the application roles to " + sourceAdminUsername +
+                        " in IS 5.1.0");
             }
+        } else {
+            logger.info("**************************Start of Database Migration Process**************************");
+
+            Map<String, String> serviceProviderDTOMap;
+            List<String> appNames;
+            try {
+                serviceProviderDTOMap = spData510.getSAMLSPConfiguration();
+                appNames = spData510.getAllServiceProviderNames();
+            } catch (DataMigrationException e) {
+                throw new RuntimeException("Error while retrieving all the service provider information from IS 5.1.0", e);
+            }
+
+            for (String name : appNames) {
+                logger.info("*********Start Data Migration of Application : " + name + "********");
+                String sp510 = null;
+                List<LocalClaimMetaData> localClaimDTOs = null;
+                List<String> usersOfApplicationRole = null;
+                try {
+                    sp510 = spData510.getServiceProvider(name);
+                } catch (DataMigrationException e) {
+                    logger.error("Error while retrieving service provider information of : " + name);
+                }
+
+                try {
+                    localClaimDTOs = claimData510.getLocalClaimsInSPConfig(sp510);
+                } catch (DataMigrationException e) {
+                    logger.error("Error while retrieving all the local claims configured in the service provider");
+                }
+
+                try {
+                    usersOfApplicationRole = userData510.getUserListOfAppRole(name);
+                } catch (DataMigrationException e) {
+                    logger.error("Error while retrieving user list of application role of : " + name);
+                }
+
+                if (sp510 != null) {
+                    try {
+                        claimData570.createLocalClaimsInSPConfig(localClaimDTOs);
+                        spData570.createServiceProvider(sp510, serviceProviderDTOMap, usersOfApplicationRole);
+                        userData570.assignApplicationRoleToUsers(usersOfApplicationRole, name);
+                    } catch (DataMigrationException e) {
+                        logger.error("Error while creating service provider : " + name);
+                        try {
+                            userData570.assignApplicationRoleToUsers(usersOfApplicationRole, name);
+                        } catch (DataMigrationException ex) {
+                            logger.error("Error while assigning application role of : " + name + " to users.");
+                        }
+                    }
+                }
+            }
+            logger.info("**************************End of Database Migration Process**************************");
         }
-        logger.info("*********End of Database Migration Process********");
     }
 }

@@ -31,7 +31,8 @@ public class SPData570 {
     private static Logger logger = LoggerFactory.getLogger(SPData570.class);
 
     private static SPData570 spData570;
-    IdentitySAMLSSOConfigServiceStub samlConfigServiceStub;
+    private UserData570 userData570;
+    private IdentitySAMLSSOConfigServiceStub samlConfigServiceStub;
     private IdentityApplicationManagementServiceStub applicationMgtServiceStub;
 
     private SPData570() {
@@ -44,6 +45,8 @@ public class SPData570 {
                 trustStorePassword, adminUsername, adminPassword);
         samlConfigServiceStub = getSAMLSSOConfigService(hostname, port, trustStorePath, trustStorePassword,
                 adminUsername, adminPassword);
+        userData570 = UserData570.getInstance(hostname, port, trustStorePath, trustStorePassword, adminUsername,
+                adminPassword);
     }
 
     public static SPData570 getInstance(String hostname, String port, String trustStorePath,
@@ -60,7 +63,8 @@ public class SPData570 {
         return spData570;
     }
 
-    public void createServiceProvider(String serviceProviderAsJson, Map<String, String> serviceProviderDTOMap)
+    public void createServiceProvider(String serviceProviderAsJson, Map<String, String> serviceProviderDTOMap,
+                                      List<String> usersOfApplicationRole)
             throws DataMigrationException {
 
         logger.info("Creating the Service Provider in IS 5.7.0");
@@ -173,12 +177,12 @@ public class SPData570 {
         }
     }
 
-    private IdentityApplicationManagementServiceStub getIdentityApplicationManagementService(String hostName,
-                                                                                             String port,
-                                                                                             String trustStorePath,
-                                                                                             String trustStorePassword,
-                                                                                             String adminUsername,
-                                                                                             String adminPassword) {
+    public IdentityApplicationManagementServiceStub getIdentityApplicationManagementService(String hostName,
+                                                                                            String port,
+                                                                                            String trustStorePath,
+                                                                                            String trustStorePassword,
+                                                                                            String adminUsername,
+                                                                                            String adminPassword) {
 
         DataMigrationUtil.setTrustStoreForSSL(trustStorePath, trustStorePassword);
         ConfigurationContext configContext = null;
@@ -187,14 +191,14 @@ public class SPData570 {
             configContext = ConfigurationContextFactory
                     .createConfigurationContextFromFileSystem(null, null);
         } catch (AxisFault axisFault) {
-            logger.error("Unable to create Configuration Context", axisFault);
+            logger.error("Unable to create Configuration Context");
         }
 
         try {
             applicationMgtServiceStub = new IdentityApplicationManagementServiceStub(configContext, serviceEndPoint);
         } catch (AxisFault axisFault) {
             logger.error("Unable to instantiate admin Service stub of " +
-                    "IdentityApplicationManagementService", axisFault);
+                    "IdentityApplicationManagementService");
         }
         ServiceClient client = applicationMgtServiceStub._getServiceClient();
         DataMigrationUtil.authenticate(client, adminUsername, adminPassword);
@@ -214,14 +218,14 @@ public class SPData570 {
             configContext = ConfigurationContextFactory
                     .createConfigurationContextFromFileSystem(null, null);
         } catch (AxisFault axisFault) {
-            logger.error("Unable to create Configuration Context", axisFault);
+            logger.error("Unable to create Configuration Context");
         }
 
         try {
             samlConfigServiceStub = new IdentitySAMLSSOConfigServiceStub(configContext, serviceEndPoint);
         } catch (AxisFault axisFault) {
             logger.error("Unable to instantiate admin Service stub of " +
-                    "IdentitySAMLSSOConfigService", axisFault);
+                    "IdentitySAMLSSOConfigService");
 
         }
         ServiceClient client = samlConfigServiceStub._getServiceClient();

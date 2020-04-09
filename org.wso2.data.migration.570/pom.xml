@@ -37,6 +37,11 @@
             <version>5.12.153</version>
         </dependency>
         <dependency>
+            <groupId>org.wso2.carbon.identity.framework</groupId>
+            <artifactId>org.wso2.carbon.user.mgt.stub</artifactId>
+            <version>5.12.153</version>
+        </dependency>
+        <dependency>
             <groupId>org.wso2.carbon.identity.inbound.auth.saml2</groupId>
             <artifactId>org.wso2.carbon.identity.sso.saml.stub</artifactId>
             <version>5.4.22</version>

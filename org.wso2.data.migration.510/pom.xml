@@ -53,6 +53,11 @@
             <version>5.5.0-m4</version>
             <scope>compile</scope>
         </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon.identity</groupId>
+            <artifactId>org.wso2.carbon.user.mgt.stub</artifactId>
+            <version>5.0.7</version>
+        </dependency>
     </dependencies>
 
     <build>

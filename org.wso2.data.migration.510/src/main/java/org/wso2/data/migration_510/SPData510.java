@@ -73,8 +73,10 @@ public class SPData510 {
             throw new DataMigrationException("Error in retrieving all the application basic information in IS 5.1.0", e);
         }
 
-        for (ApplicationBasicInfo info : applicationBasicInfos) {
-            appNames.add(info.getApplicationName());
+        if (applicationBasicInfos != null) {
+            for (ApplicationBasicInfo info : applicationBasicInfos) {
+                appNames.add(info.getApplicationName());
+            }
         }
         return appNames;
     }
@@ -109,11 +111,21 @@ public class SPData510 {
         } catch (RemoteException | IdentitySAMLSSOConfigServiceIdentityException e) {
             throw new DataMigrationException("Error in retrieving all the application basic information in IS 5.1.0", e);
         }
-        for (SAMLSSOServiceProviderDTO providerDTO : sameSPInfoDTO.getServiceProviders()) {
-            enableSAMLAttributeProfile(providerDTO);
-            samlSPConfigMap.put(providerDTO.getIssuer(), DataMigrationUtil.getObjectInJson(providerDTO));
+        if (sameSPInfoDTO != null && sameSPInfoDTO.getServiceProviders() != null) {
+            for (SAMLSSOServiceProviderDTO providerDTO : sameSPInfoDTO.getServiceProviders()) {
+                enableSAMLAttributeProfile(providerDTO);
+                samlSPConfigMap.put(providerDTO.getIssuer(), DataMigrationUtil.getObjectInJson(providerDTO));
+            }
         }
         return samlSPConfigMap;
+    }
+
+    private void enableSAMLAttributeProfile(SAMLSSOServiceProviderDTO samlssoServiceProviderDTO) {
+
+        if (samlssoServiceProviderDTO.getAttributeConsumingServiceIndex() != null) {
+            samlssoServiceProviderDTO.setEnableAttributeProfile(true);
+            samlssoServiceProviderDTO.setEnableAttributesByDefault(true);
+        }
     }
 
     private IdentityApplicationManagementServiceStub getIdentityApplicationManagementService(String hostName,
@@ -130,14 +142,14 @@ public class SPData510 {
             configContext = ConfigurationContextFactory
                     .createConfigurationContextFromFileSystem(null, null);
         } catch (AxisFault axisFault) {
-            logger.error("Unable to create Configuration Context", axisFault);
+            logger.error("Unable to create Configuration Context");
         }
 
         try {
             applicationMgtServiceStub = new IdentityApplicationManagementServiceStub(configContext, serviceEndPoint);
         } catch (AxisFault axisFault) {
             logger.error("Unable to instantiate admin Service stub of " +
-                    "IdentityApplicationManagementService", axisFault);
+                    "IdentityApplicationManagementService");
         }
         ServiceClient client = applicationMgtServiceStub._getServiceClient();
         DataMigrationUtil.authenticate(client, adminUsername, adminPassword);
@@ -157,26 +169,18 @@ public class SPData510 {
             configContext = ConfigurationContextFactory
                     .createConfigurationContextFromFileSystem(null, null);
         } catch (AxisFault axisFault) {
-            logger.error("Unable to create Configuration Context", axisFault);
+            logger.error("Unable to create Configuration Context");
         }
 
         try {
             samlConfigServiceStub = new IdentitySAMLSSOConfigServiceStub(configContext, serviceEndPoint);
         } catch (AxisFault axisFault) {
             logger.error("Unable to instantiate admin Service stub of " +
-                    "IdentitySAMLSSOConfigService", axisFault);
+                    "IdentitySAMLSSOConfigService");
 
         }
         ServiceClient client = samlConfigServiceStub._getServiceClient();
         DataMigrationUtil.authenticate(client, adminUsername, adminPassword);
         return samlConfigServiceStub;
-    }
-
-    private void enableSAMLAttributeProfile(SAMLSSOServiceProviderDTO samlssoServiceProviderDTO) {
-
-        if (samlssoServiceProviderDTO.getAttributeConsumingServiceIndex() != null) {
-            samlssoServiceProviderDTO.setEnableAttributeProfile(true);
-            samlssoServiceProviderDTO.setEnableAttributesByDefault(true);
-        }
     }
 }
